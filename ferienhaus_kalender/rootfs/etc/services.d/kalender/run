@@ -1,0 +1,5 @@
+#!/usr/bin/with-contenv bashio
+export FLASK_APP=/app/kalender.py
+export DATA_FILE=/share/ferienhaus_kalender_data.json
+cd /app
+exec python3 kalender.py

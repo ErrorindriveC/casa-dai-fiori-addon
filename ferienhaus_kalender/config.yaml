@@ -1,0 +1,29 @@
+name: "Ferienhaus Kalender"
+description: "Buchungskalender für das Ferienhaus Tessin"
+version: "1.0.0"
+slug: "ferienhaus_kalender"
+init: false
+arch:
+  - aarch64
+  - amd64
+  - armhf
+  - armv7
+  - i386
+ports:
+  5050/tcp: 5050
+ports_description:
+  5050/tcp: "Kalender Web-Interface"
+map:
+  - share:rw
+options:
+  persons:
+    - name: "Fam. Marco"
+      color: "#2E86AB"
+    - name: "Fam. Mischa"
+      color: "#A23B72"
+    - name: "ADI"
+      color: "#F18F01"
+schema:
+  persons:
+    - name: str
+      color: str
