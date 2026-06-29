@@ -1,6 +1,6 @@
 # Casa dai Fiori – Ferienhaus Kalender
 
-Buchungskalender für das Ferienhaus in Calonico, Tessin.
+Buchungskalender für das Ferienhaus
 Läuft als Home Assistant Add-on (HAOS).
 
 ---
@@ -42,18 +42,7 @@ casa-dai-fiori-addon/
 
 ### 4. Zugriff von aussen (Tailscale Funnel)
 
-Im HA Terminal (SSH Add-on) oder auf dem PC:
 
-```bash
-tailscale funnel 5050
-```
-
-Tailscale gibt dir eine URL wie:
-`https://deinname.ts.net`
-
-Diese URL an Mutter und Mischa/ADI schicken – fertig!
-
----
 
 ## Personen anpassen
 
@@ -71,6 +60,6 @@ Das ist der HA Share-Ordner – bleibt bei Updates erhalten.
 
 ## Farben
 
-- 🟢 Fam. Marco  – Waldgrün `#4A7C59`
-- 🟠 Fam. Mischa – Terrakotta `#C0622A`
-- 🟣 ADI         – Violett `#7B5EA7`
+- 🟢 Fam.1 – Waldgrün `#4A7C59`
+- 🟠 Fam.2 – Terrakotta `#C0622A`
+- 🟣 Person       – Violett `#7B5EA7`
