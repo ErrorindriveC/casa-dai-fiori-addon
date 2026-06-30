@@ -69,7 +69,35 @@ Das ist der HA Share-Ordner – bleibt bei Updates erhalten.
 
 ---
 
-## Personen konfigurieren
+## Versionierung & Updates
 
-In HA → Add-on → **Konfiguration** kannst du Namen und Farben direkt eintragen.
-Danach Add-on neu starten – fertig. Keine Namen im Code, kein Repo nötig zu ändern.
+Jede Änderung am Add-on braucht eine neue Versionsnummer in `config.yaml` (`version: "1.1.0"` → `"1.2.0"` usw.).
+
+Sobald du eine neue Version auf GitHub hochlädst:
+1. In HA → Add-on Store → oben rechts **Reload** klicken
+2. Im Add-on selbst erscheint automatisch ein **Update verfügbar** Button
+3. Klick drauf → HA baut das Add-on neu
+
+Empfehlung: **Semantic Versioning** nutzen — `MAJOR.MINOR.PATCH`
+- PATCH (1.0.**1**) – kleine Bugfixes
+- MINOR (1.**1**.0) – neue Funktionen (z.B. PIN-Schutz, Header-Bild)
+- MAJOR (**2**.0.0) – grössere Umbrüche
+
+### Changelog
+
+- **1.1.0** – PIN-Schutz (optional, ein PIN für alle), Hintergrundbild im Header (Calonico), Login-Seite
+- **1.0.0** – Erste Version: Monats-/Jahresansicht, Buchungen pro Person
+
+---
+
+## PIN einrichten
+
+In HA → Add-on → **Konfiguration**:
+
+```yaml
+pin: "1234"
+```
+
+Leer lassen (`pin: ""`) = kein Passwortschutz, jeder mit Link kommt direkt rein.
+Mit PIN: alle Familienmitglieder geben einmal den gleichen PIN ein (bleibt im Browser gespeichert).
+

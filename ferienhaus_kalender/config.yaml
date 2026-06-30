@@ -1,6 +1,6 @@
 name: "Holiday Home Calendar"
-description: "A simple shared booking calendar for your holiday home. Configure your guests or families and share the URL — no login needed."
-version: "1.0.0"
+description: "A simple shared booking calendar for your holiday home. Configure your guests or families and share the URL — optionally protected by a PIN."
+version: "1.1.0"
 slug: "ferienhaus_kalender"
 init: false
 arch:
@@ -13,6 +13,7 @@ ports_description:
 map:
   - share:rw
 options:
+  pin: ""
   persons:
     - name: "Family A"
       color: "#4A7C59"
@@ -21,6 +22,7 @@ options:
     - name: "Person C"
       color: "#7B5EA7"
 schema:
+  pin: "str?"
   persons:
     - name: str
       color: str

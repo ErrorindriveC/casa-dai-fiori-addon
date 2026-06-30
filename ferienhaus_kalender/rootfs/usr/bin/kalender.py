@@ -4,15 +4,19 @@ Casa dai Fiori – Calonico
 Ferienhaus Buchungskalender
 """
 
-from flask import Flask, jsonify, request, render_template_string
+from flask import Flask, jsonify, request, render_template_string, session, redirect, send_from_directory
 import json
 import os
+import secrets
 from datetime import datetime
+from functools import wraps
 
 app = Flask(__name__)
+app.secret_key = os.environ.get("SECRET_KEY") or secrets.token_hex(32)
 
 DATA_FILE = os.environ.get("DATA_FILE", "/share/ferienhaus_kalender_data.json")
 OPTIONS_FILE = "/data/options.json"
+STATIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
 
 DEFAULT_PERSONS = [
     {"name": "Person 1", "color": "#4A7C59"},
@@ -20,17 +24,35 @@ DEFAULT_PERSONS = [
     {"name": "Person 3", "color": "#7B5EA7"},
 ]
 
-def load_persons():
+def load_options():
     if os.path.exists(OPTIONS_FILE):
         try:
             with open(OPTIONS_FILE, "r") as f:
-                opts = json.load(f)
-                persons = opts.get("persons", [])
-                if persons:
-                    return persons
+                return json.load(f)
         except Exception:
             pass
+    return {}
+
+def load_persons():
+    opts = load_options()
+    persons = opts.get("persons", [])
+    if persons:
+        return persons
     return DEFAULT_PERSONS
+
+def get_pin():
+    opts = load_options()
+    pin = str(opts.get("pin", "")).strip()
+    return pin if pin else None
+
+def login_required(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        pin = get_pin()
+        if pin and not session.get("authed"):
+            return redirect("/login")
+        return f(*args, **kwargs)
+    return wrapper
 
 def load_data():
     if os.path.exists(DATA_FILE):
@@ -77,7 +99,10 @@ HTML = r"""<!DOCTYPE html>
   /* HEADER */
   header {
     background: var(--dark);
-    padding: 28px 32px 22px;
+    background-image: linear-gradient(rgba(20,16,10,0.35), rgba(20,16,10,0.65)), url('/static/header.jpg');
+    background-size: cover;
+    background-position: center 70%;
+    padding: 48px 32px 26px;
     display: flex;
     align-items: flex-end;
     justify-content: space-between;
@@ -103,6 +128,7 @@ HTML = r"""<!DOCTYPE html>
     font-weight: 400;
     color: var(--white);
     line-height: 1.15;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.4);
   }
   header h1 em {
     font-style: italic;
@@ -869,18 +895,99 @@ fetchBookings();
 </html>
 """
 
+LOGIN_HTML = r"""<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Casa dai Fiori – Login</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600&family=Inter:wght@300;400;500;600&display=swap');
+  * { box-sizing: border-box; margin:0; padding:0; }
+  body {
+    font-family: 'Inter', sans-serif;
+    background: linear-gradient(rgba(44,36,22,0.55), rgba(44,36,22,0.65)), url('/static/header.jpg') center/cover no-repeat;
+    min-height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+  }
+  .card {
+    background: #FEFCF8;
+    border-radius: 16px;
+    padding: 36px 32px;
+    max-width: 360px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  }
+  .eyebrow {
+    font-size: 10px; font-weight: 600; letter-spacing: 0.18em;
+    text-transform: uppercase; color: #8B7355; margin-bottom: 6px;
+  }
+  h1 { font-family: 'Playfair Display', serif; font-weight: 400; font-size: 24px; color: #2C2416; margin-bottom: 24px; }
+  input {
+    width: 100%; padding: 12px 14px; border-radius: 8px;
+    border: 1px solid #D4C9B0; background: #F5F0E8;
+    font-size: 16px; text-align: center; letter-spacing: 0.1em;
+    margin-bottom: 14px; outline: none;
+  }
+  input:focus { border-color: #8B7355; }
+  button {
+    width: 100%; padding: 11px; border-radius: 8px; border: none;
+    background: #2C2416; color: #FEFCF8; font-weight: 600; font-size: 14px;
+    cursor: pointer;
+  }
+  button:hover { background: #3d3020; }
+  .error { color: #c0392b; font-size: 13px; margin-bottom: 12px; min-height: 16px; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="eyebrow">Calonico · Valle Leventina</div>
+    <h1>Casa dai Fiori</h1>
+    <form method="POST" action="/login">
+      <input type="password" name="pin" placeholder="PIN" autofocus inputmode="numeric">
+      <div class="error">{{ error or '' }}</div>
+      <button type="submit">Öffnen</button>
+    </form>
+  </div>
+</body>
+</html>
+"""
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    pin = get_pin()
+    if not pin:
+        return redirect('/')
+    error = None
+    if request.method == 'POST':
+        if request.form.get('pin', '').strip() == pin:
+            session['authed'] = True
+            session.permanent = True
+            return redirect('/')
+        error = 'Falscher PIN'
+    return render_template_string(LOGIN_HTML, error=error)
+
+@app.route('/static/<path:filename>')
+def static_files(filename):
+    return send_from_directory(STATIC_DIR, filename)
+
 @app.route('/')
+@login_required
 def index():
     import json as j
     persons_json = j.dumps(load_persons())
     return render_template_string(HTML, persons_json=persons_json)
 
 @app.route('/api/bookings', methods=['GET'])
+@login_required
 def get_bookings():
     data = load_data()
     return jsonify(data['bookings'])
 
 @app.route('/api/bookings', methods=['POST'])
+@login_required
 def add_booking():
     data = load_data()
     booking = request.json
@@ -890,6 +997,7 @@ def add_booking():
     return jsonify(booking), 201
 
 @app.route('/api/bookings', methods=['PUT'])
+@login_required
 def update_booking():
     data = load_data()
     updated = request.json
@@ -898,6 +1006,7 @@ def update_booking():
     return jsonify(updated)
 
 @app.route('/api/bookings/<booking_id>', methods=['DELETE'])
+@login_required
 def delete_booking(booking_id):
     data = load_data()
     data['bookings'] = [b for b in data['bookings'] if b['id'] != booking_id]
