@@ -12,12 +12,25 @@ from datetime import datetime
 app = Flask(__name__)
 
 DATA_FILE = os.environ.get("DATA_FILE", "/share/ferienhaus_kalender_data.json")
+OPTIONS_FILE = "/data/options.json"
 
-PERSONS = [
-    {"name": "Fam. Marco", "color": "#4A7C59"},
-    {"name": "Fam. Mischa", "color": "#C0622A"},
-    {"name": "ADI",         "color": "#7B5EA7"},
+DEFAULT_PERSONS = [
+    {"name": "Person 1", "color": "#4A7C59"},
+    {"name": "Person 2", "color": "#C0622A"},
+    {"name": "Person 3", "color": "#7B5EA7"},
 ]
+
+def load_persons():
+    if os.path.exists(OPTIONS_FILE):
+        try:
+            with open(OPTIONS_FILE, "r") as f:
+                opts = json.load(f)
+                persons = opts.get("persons", [])
+                if persons:
+                    return persons
+        except Exception:
+            pass
+    return DEFAULT_PERSONS
 
 def load_data():
     if os.path.exists(DATA_FILE):
@@ -859,7 +872,7 @@ fetchBookings();
 @app.route('/')
 def index():
     import json as j
-    persons_json = j.dumps(PERSONS)
+    persons_json = j.dumps(load_persons())
     return render_template_string(HTML, persons_json=persons_json)
 
 @app.route('/api/bookings', methods=['GET'])
